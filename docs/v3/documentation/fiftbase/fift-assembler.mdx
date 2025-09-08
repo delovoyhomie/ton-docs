@@ -1,0 +1,98 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Using the Fift assembler
+
+The Fift assembler translates TVM mnemonics to bytecode using postfix notation and Fift’s stack. Load with `"Asm.fif" include`.
+
+:::tip
+Related:
+- TVM instructions reference: /v3/documentation/tvm/instructions
+- TVM overview: /v3/documentation/tvm/overview
+:::
+
+## 7.1 Loading
+
+- `include (S – )`: loads a Fift file via FIFTPATH/-I; typically `"Asm.fif" include`.
+
+## 7.2 Basics
+
+- Code blocks: `<{ … }>` produce a Builder; `}>c` → Cell; `}>s` → Slice
+- Registers: `s0..s15` etc. correspond to TVM stack regs; words append opcodes to the Builder at TOS
+
+Example:
+
+```fift
+<{ s1 s2 XCHG OVER }>s csr.   \ x{1221}
+```
+
+Note: Assembler targets a specific TVM codepage (version); ensure your node/codepage matches the intended network version.
+
+Quick run flow:
+
+```fift
+<{ 2 INT 3 INT OVER }>s dup csr.   \ assemble to Slice, print hex
+runvmcode .s                         \ run and inspect TVM stack
+```
+
+## 7.3 Pushing integer constants
+
+- `PUSHINT`/`INT`: shortest encoding chosen automatically
+
+```fift
+<{ 239 17 * INT }>s dup csr. runvmcode .s 2drop
+<{ 239 INT 17 INT MUL }>s dup csr. runvmcode .s 2drop
+```
+
+Result shows identical final stack; assembler chooses shortest PUSHINT encoding automatically.
+
+## 7.4 Immediate arguments
+
+- Immediate ints/cells/continuations/slices are passed via the Fift stack
+- Out‑of‑range immediates may be rewritten into equivalent sequences (e.g., `239 ADDCONST` → `PUSHINT 239` + `ADD`)
+
+## 7.5 Immediate continuations
+
+- Nest `<{ … }>` inside `<{ … }>` to pass continuations
+
+```fift
+7 <{ 1 INT SWAP <{ 10 MULCONST }> PUSHCONT REPEAT }>s dup csr. runvmcode drop .
+```
+
+Alternative with branch in a separate cell (IFJMPREF):
+
+```fift
+<{ DUP 1 INT AND  <{ 3 MULCONST INC }>c IFJMPREF  1 RSHIFT# }>s dup csr.
+3 swap runvmcode .s
+```
+
+## 7.6 Control flow helpers
+
+High‑level macros for conditions/loops compiled into TVM branches:
+
+- `IF:<{`, `IFNOT:<{`, `IFJMP:<{`, `}>ELSE<{`, `}>ELSE:`, `}>IF`
+- `REPEAT:<{`, `UNTIL:<{`, `WHILE:<{`, `}>DO<{`, `}>DO:`, `AGAIN:<{`, `}>AGAIN`, `}>REPEAT`, `}>UNTIL`
+
+These generate compact branches/loops; see Asm.fif for exact stack effects and expansions.
+
+Example (UNTIL and WHILE forms):
+
+```fift
+<{ ZERO  10 INT  REPEAT:{ INC  DUP }>UNTIL }>s csr.
+<{ 10 INT  WHILE:{ DUP }DO:{ DEC } }>s csr.
+```
+
+## 7.7 Macro definitions
+
+- Assembler words are just Fift words with known stack effects, so you can define macros
+
+```fift
+{ 2dup > ' swap if  rot DUP rot GEQINT SWAP swap LEQINT AND } : RANGE
+<{ DUP 17 239 RANGE IFNOT: DROP ZERO }>s dup csr.
+```
+
+## 7.8 Larger programs and subroutines
+
+- Use a selector function loaded into `cc` and `c3`; call subroutines by numeric or symbolic selectors (e.g., `CALLDICT n`)
+- `runvmdict` integrates naturally with selector‑based programs
+
+<Feedback />

@@ -1,0 +1,113 @@
+import Feedback from '@site/src/components/Feedback';
+
+# TON-specific operations
+
+Fift provides helpers used by TON/TVM beyond generic language features.
+
+:::tip
+Related docs:
+- TVM overview: /v3/documentation/tvm/overview
+- TL‑B language: /v3/documentation/data-formats/tlb/overview
+- Cells overview: /v3/documentation/data-formats/cells/overview
+:::
+
+## 6.1 Ed25519 cryptography
+
+- `now ( – x)`: current Unix time
+- `newkeypair ( – priv pub)`: 32‑byte Bytes keys (test‑quality entropy)
+- `priv>pub (priv – pub)`
+- `ed25519_sign (B priv – sig)`; `ed25519_sign_uint (x priv – sig)`
+- `ed25519_chksign (B pub sig – ?)`
+
+Example (sign/verify):
+
+```fift
+newkeypair  2dup swap  \ priv pub priv
+"hello" $>s s>c hashB  \ hash Bytes of message
+over ed25519_sign      \ sig = sign(hash, priv)
+rot swap               \ pub hash sig
+ed25519_chksign .      \ -1 on success
+```
+
+## 6.2 Smart‑contract addresses
+
+- `smca>$ (wc addr flags – S)`: pack to user‑friendly string (flags: `+1` non‑bounceable, `+2` testnet, `+4` base64url)
+- `$>smca (S – wc addr flags −1 | 0)`: parse from string
+
+Example:
+
+```fift
+-1 0x538fa7...0f7d 0 smca>$ dup type cr
+dup $>smca 0= abort"bad address"  rot . swap x. .
+```
+
+## 6.3 TVM dictionaries (HashmapE)
+
+Trees of cells keyed by `n`‑bit keys. Values are Slices/Cells per TL‑B.
+
+- `dictnew ( – D)`: create empty dictionary (Null)
+- Insert/update (examples):
+  - `idict! (v x D n – D' −1 | D 0)`: add signed n‑bit key `x` → value Slice `v`
+  - `idict!+`: add only if key absent
+  - `b>idict!`: value passed as Builder
+- Lookup/remove (variants return flag `−1` on success or `0` on failure):
+  - `idict@`, `idict@?` (get value), `idict-del` (delete)
+- Prefix dictionaries: `pfxdict!`, `pfxdict@` (restrict keys to first `n` bits)
+
+:::note
+These words operate on TVM HashmapE n X structures; the concrete encoding of `X` is defined by TL‑B. Use `s>c`, `<s`, `s,` to convert between Slice/Cell while packing values.
+:::
+
+Minimal example (u16→u8 dictionary):
+
+```fift
+dictnew  \ D
+<b 0xAB 8 u, <s         \ value as Slice
+0x1234 swap  over 16 u,  \ key bits
+idict! drop              \ D'
+
+\ lookup
+swap 16 u,  idict@ 0= abort"not found"  \ v -1
+. drop
+```
+
+Refer to TVM spec for exact encoding; these words mirror TL‑B HashmapE semantics.
+
+## 6.4 Invoking TVM from Fift
+
+- `runvmcode (… s – … x)`: run TVM with continuation from Slice `s`; returns result stack and exit code `x`
+- `runvmdict (… s – … x)`: like above, plus `c3 = s` and pushes 0 into TVM stack (for selector)
+- `runvm (… s c – … x c')`: like `runvmdict` and returns final `c4` (persistent data root)
+- `runvmctx (… s c t – … x c')`: like `runvm` plus context `c7 = t`
+- Gas‑aware variants: `gasrunvmcode`, `gasrunvmdict`, `gasrunvm`, `gasrunvmctx`
+
+Example:
+
+```fift
+2 3 9 x{1221} runvmcode .s
+```
+
+Selector‑based program (multiple subroutines):
+
+```fift
+\ s: selector in cc and c3, zero is main()
+0 <{  \ build selector
+  DUP 0 EQINT IF:{  DROP ZERO RET  }:  \ main
+  DUP 1 EQINT IF:{  DROP INC RET  }:
+  DROP ZERO RET
+}>s dup  \ keep copy for c3
+0 swap runvmdict .s              \ push 0 selector and run
+```
+
+See also:
+- Instructions list: /v3/documentation/tvm/instructions
+- Gas semantics: /v3/documentation/tvm/overview (compute phase, gas)
+
+Gas‑aware run example:
+
+```fift
+1000  x{21}  \ gas limit, code: OVER
+gasrunvmcode .s             \ ... consumed_gas
+```
+
+<Feedback />

@@ -1,0 +1,86 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Appendix A: List of Fift words
+
+This appendix lists core Fift words with their stack effects. It is being generated from the original PDF; below is a curated subset with pointers to the full reference.
+
+Quick links: [A](#a) [B](#b) [C](#c) [D](#d) [E](#e) [F](#f) [G](#g) [H](#h) [I](#i) [J](#j) [K](#k) [L](#l) [M](#m) [N](#n) [O](#o) [P](#p) [Q](#q) [R](#r) [S](#s) [T](#t) [U](#u) [V](#v) [W](#w) [X](#x) [Y](#y) [Z](#z)
+
+Source: [/fiftbase.pdf](/fiftbase.pdf)
+
+See also:
+- Chapter 2: /v3/documentation/fiftbase/fift-basics
+- Chapter 5: /v3/documentation/fiftbase/cell-manipulation
+- Chapter 6: /v3/documentation/fiftbase/ton-specific
+- Chapter 7: /v3/documentation/fiftbase/fift-assembler
+
+## Common stack operators
+
+- `dup (x – x x)`
+- `drop (x – )`
+- `swap (x y – y x)`
+- `rot (x y z – y z x)`; `-rot (x y z – z x y)`
+- `over (x y – x y x)`; `tuck (x y – y x y)`; `nip (x y – y)`
+- `2dup (x y – x y x y)`; `2drop (x y – )`; `2swap (a b c d – c d a b)`
+- `pick (x_n..x_0 n – x_n..x_0 x_n)`; `roll (x_n..x_0 n – x_{n-1}..x_0 x_n)`
+
+## Arithmetic and comparison
+
+- `+ (x y – x+y)`; `- (x y – x−y)`; `*`; `/`; `mod`; `/mod`
+- `negate (x – −x)`
+- `< > = <> <= >= (x y – ?)`; `0< 0> 0= 0<> 0<= 0>= (x – ?)`
+- `cmp (x y – z)`; `sgn (x – y)`
+- Booleans: `true ( – −1)`, `false ( – 0)`, `0<> (x – ?)`
+
+## Strings and I/O
+
+- `"…" ( – S)`; `."…" ( – )`; `type (S – )`; `cr ( – )`; `emit (x – )`
+- `char X ( – x)`; `bl ( – 32)`; `space ( – )`
+- `$+ (S S – S)`; `$len (S – x)`; `+"…" (S – S)`
+- `word (x – S)`; `(.) (x – S)`; `(number) (S – 0 | x 1 | x y 2)`
+
+## Variables and tuples
+
+- `variable` / `hole ( – p)` / `box (x – p)`; `@ (p – x)`; `! (x p – )`; `+!`; `1+!`; `0!`
+- Tuples: `| ( – t)`; `, (t x – t')`; `unpair` / `untriple` / `untuple`; `[] (t i – x)`; `count`
+- Lists: `null ( – ⊥)`; `null? (x – ?)`; `cons` / `uncons` / `car` / `cdr` / `cadr`; `list`; `.l`
+
+## Cells / Slices / Builders
+
+- Literals: `b{…}`; `x{…}`; refs/concat: `|_`, `|+`
+- Builders: `<b ( – b)`; `b> (b – c)`; `i,` / `u,`; `ref,`; `s,`; `sr,`; `$,`
+- Slices: `<s (c – s)`; `s> (s – )`; `i@` / `i@+` / `i@?` / `i@?+`; `u@…`; `B@…`; `$@…`; `ref@…`;
+- Query/convert: `empty?`; `remaining`; `sbits`; `srefs`; `s>c`; `$>s`; `csr.`
+- Hash: `hashB (c – B)`; `hashu (c – x)`; `shash (s – B)`
+- BOC: `boc+>B (c x – B)`; `boc>B (c – B)`; `B>boc (B – c)`
+- Bytes: `B{…}`; `Bx.`; `file>B`; `B>file`; `Blen`; `BhashB`; `Bhashu`; `B=`; `Bcmp`; `B>i@`; `B>u@`; `i>B`; `u>B`; `B+`; `B|`
+
+## TVM dictionaries (HashmapE)
+
+- New: `dictnew ( – D)`
+- Put: `idict!`; `idict!+`; `b>idict!` (and unsigned/bytes variants)
+- Get: `idict@`; `idict@?`; Delete: `idict-del`
+- Prefix: `pfxdict!`; `pfxdict@`
+
+## TVM invocation
+
+- `runvmcode`; `runvmdict`; `runvm`; `runvmctx`; gas versions: `gasrunvmcode`, `gasrunvmdict`, `gasrunvm`, `gasrunvmctx`
+
+## Cryptography and addresses
+
+- `now`; `newkeypair`; `priv>pub`; `ed25519_sign`; `ed25519_chksign`
+- `$>smca`; `smca>$`
+
+## Assembler (see TVM instructions page)
+
+- Load: `"Asm.fif" include`
+- Blocks: `<{ … }>` / `}>` / `}>c` / `}>s`
+- Pushing ints/slices/conts: `INT` / `PUSHINT` / `PUSHSLICE` / `PUSHCONT`
+- Control flow macros: `IF:<{` / `}>ELSE<{` / `}>IF`, `REPEAT:<{` / `}>REPEAT`, `UNTIL:<{` / `}>UNTIL`, `WHILE:<{` / `}>DO<{` / `}>DO:`
+- Full opcode list: /v3/documentation/tvm/instructions
+
+---
+
+Full word-by-word extraction from the PDF is in progress and will replace this curated list once verified.
+
+<Feedback />

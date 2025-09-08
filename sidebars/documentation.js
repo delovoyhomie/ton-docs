@@ -351,6 +351,21 @@ module.exports = [
   },
   {
     type: 'category',
+    label: 'Fift Base Manual',
+    items: [
+      'v3/documentation/fiftbase/overview',
+      'v3/documentation/fiftbase/introduction',
+      'v3/documentation/fiftbase/fift-basics',
+      'v3/documentation/fiftbase/blocks-loops-conditionals',
+      'v3/documentation/fiftbase/dictionary-interpreter-compiler',
+      'v3/documentation/fiftbase/cell-manipulation',
+      'v3/documentation/fiftbase/ton-specific',
+      'v3/documentation/fiftbase/fift-assembler',
+      'v3/documentation/fiftbase/appendix-words',
+    ],
+  },
+  {
+    type: 'category',
     label: 'Whitepapers',
     items: [
       {

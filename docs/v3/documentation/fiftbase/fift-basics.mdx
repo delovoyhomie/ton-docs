@@ -1,0 +1,386 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Fift basics
+
+This chapter introduces fundamental Fift concepts and gradually becomes more formal and precise. Later chapters provide deeper details and examples.
+
+## Stack value types
+
+Values of the following types can be kept on a Fift stack:
+
+- Integer: signed 257‑bit integer; commonly denoted as `x`, `y`, `z` in stack notation.
+- Cell: a TVM cell with up to 1023 data bits and up to 4 references to other cells; commonly `c`, `c0`, `c2`.
+- Slice: a partial view of a TVM cell used to parse data from cells; commonly `s`.
+- Builder: a partially built cell with up to 1023 data bits and up to 4 references; used to create new cells; commonly `b`.
+- Null: a type with a single null value (⊥); used to initialize new Boxes.
+- Tuple: an ordered collection of values of any of these types; can encode algebraic datatypes and lists.
+- String: a UTF‑8 string; commonly `S`.
+- Bytes: an arbitrary sequence of bytes; commonly `B`.
+- WordList: a partially created list of word references (for building definitions); commonly `l`.
+- WordDef: an execution token, usually a definition of an existing Fift word; commonly `e`.
+- Box: a memory location that can store one stack value; commonly `p`.
+- Atom: a simple entity uniquely identified by its name (string); useful for identifiers, labels, tags, stack markers; commonly `a`.
+- Object: an arbitrary C++ object derived from `td::CntObject`; used by extensions to interface with other libraries.
+
+The first six types are shared with TVM; the rest are Fift‑specific. Not all TVM stack types exist in Fift (e.g., Continuations are treated as generic Objects when present on the stack).
+
+## Comments
+
+Fift supports two comment forms:
+- `// ` (must be followed by a space): single‑line comment
+- `/* ... */`: multi‑line comment
+
+Both are provided by the standard library `Fift.fif`.
+
+## Terminating the interpreter
+
+- `bye`: exit with code 0
+- `halt`: exit with a specified non‑zero code (take Integer on TOS)
+- `quit`: return to the top level of the interpreter (not OS)
+
+## Simple integer arithmetic
+
+When a token is not a known word but can be parsed as an integer literal, it is pushed onto the stack. Core primitives include:
+
+```text
++      (x y – x+y)
+-      (x y – x−y)
+negate (x – −x)
+*      (x y – x*y)
+/      (x y – q := floor(x/y))
+mod    (x y – r := x mod y)
+/mod   (x y – q r)
+```
+
+All operations validate types and 257‑bit bounds.
+
+## Stack manipulation words
+
+Rearrange values near the top of the stack without changing deeper entries. These words are type‑agnostic.
+
+```text
+dup    (x         – x x)
+drop   (x         – )
+swap   (x y       – y x)
+rot    (x y z     – y z x)
+-rot   (x y z     – z x y)  ; rot rot
+over   (x y       – x y x)
+tuck   (x y       – y x y)  ; swap over
+nip    (x y       – y)      ; swap drop
+2dup   (x y       – x y x y)
+2drop  (x y       – )
+2swap  (a b c d   – c d a b)
+pick   (x_n..x_0 n – x_n..x_0 x_n) ; 0→dup, 1→over
+roll   (x_n..x_0 n – x_{n-1}..x_0 x_n) ; 1→swap, 2→rot
+-roll  (x.. n     – x_0..x_n..x_1)
+exch   (x_n..x_0 n – x_0..x_n)
+exch2  (... n m   – ...) ; swap arbitrary positions
+?dup   (x         – x x | x) ; duplicate only if non‑zero integer
+```
+
+Example:
+
+```fift
+5 dup * .   \ 25
+1 2 3 4 .s  \ prints full stack
+rot .s
+```
+
+## Defining new words
+
+Define words using blocks `{ ... }` and the defining word `:`.
+
+```fift
+{ dup * } : square
+5 square .   \ 25
+
+{ dup square square * } : **5
+3 **5 .       \ 243
+```
+
+Notes:
+- Redefining a word affects future uses, but existing definitions that captured the old body remain unchanged.
+- `{ ... }` creates an executable block (WordDef) which you can execute with `execute`, assign to a name via `: name`, or pass around.
+
+## Named constants
+
+Use `constant` to define words that push precomputed values. Double constants use `2constant`.
+
+```fift
+1000000000 constant Gram
+Gram 2 * .         \ 2000000000
+
+Gram 1000 / constant mGram
+mGram .            \ 1000000
+
+"Hello, world!" constant hello
+hello type cr      \ prints string
+
+355 113 2constant pifrac  \ pushes 355 113
+```
+
+Scoped constants inside blocks/definitions use `=:` and `2=:`:
+
+```fift
+{ dup =: x  dup * =: y } : setxy
+3 setxy  @' x .  @' y .   \ 3 9 (lookup at runtime)
+```
+
+Note: variables are preferable for frequently changing values (see variables).
+
+## Integer and fractional literals
+
+Fift recognizes integer literals in decimal, binary (`0b`), and hexadecimal (`0x`), with optional leading `-`.
+
+```text
+11 == 0b1011 == 0xb
+```
+
+Fractional forms are represented as two integers `p q` on the stack:
+
+- Common fractions: `-17/12` → `-17 12`
+- Decimal: `2.39` → `239 100`
+- Hex/bin decimals: `-0x11.ef` → `-0x11ef 0x100`
+
+This makes fixed‑point scaling convenient with `*/` and friends. Example for Gram amounts:
+
+```fift
+1000000000 constant Gram
+{ Gram * }        : Gram*
+{ Gram swap */r } : Gram*/
+
+2.39 Gram*/   \ 2390000000
+17/12 Gram*/  \ 1416666667
+```
+
+You can introduce active prefixes (lexical helpers), e.g. `GR$` to parse Gram amounts, and pretty‑printers like `.GR` to render them back.
+
+## String literals
+
+Use the prefix word `"` to scan until the next quote and push a String:
+
+```fift
+"Hello, world!" .s
+```
+
+## Simple string manipulation
+
+Useful words:
+
+```text
+"..."      ( – S)       ; push literal
+."..."     ( – )        ; print literal
+type       (S – )       ; print string
+cr         ( – )        ; newline
+emit       (x – )       ; print UTF‑8 by codepoint
+char X     ( – x)       ; codepoint of first char
+bl         ( – x=32)
+space      ( – )        ; print one space
+$+         (S S – S)    ; concat
+$len       (S – x)      ; byte length
++"..."     (S – S)      ; concat literal (== "..." $+)
+word x     ( – S)       ; parse delimited by codepoint x (0=end of line; 32=skip spaces)
+(.)        (x – S)      ; decimal to string
+(number)   (S – 0 | x 1 | x y 2) ; parse integer/fraction literal
+```
+
+Examples:
+
+```fift
+."*"   "*" type   42 emit   char * emit
+```
+
+## Flags (booleans)
+
+Fift uses integers as booleans: any non‑zero is true (standard: −1), zero is false.
+
+```text
+true  ( – -1)
+false ( – 0)
+0<>   (x – ?)
+```
+
+Standard boolean values (0/−1) work with bitwise `and`, `or`, `xor`, `not`.
+
+## Integer comparison
+
+```text
+<  >  =  <>  <=  >=   (x y – ?)
+0< 0> 0= 0<> 0<= 0>=   (x – ?)
+cmp                    (x y – z) ; 1 if x>y, -1 if x<y, 0 if =
+sgn                    (x – y)   ; 1, -1, 0 (== 0 cmp)
+```
+
+Example:
+
+```fift
+2 3 < .          \ -1
+{ "true " "false " rot 0= 1+ pick type 2drop } : ?.
+2 3 < ?.  2 3 = ?.  2 3 > ?.
+```
+
+## String comparison
+
+Lexicographic comparisons:
+
+```text
+$=    (S S – ?)   ; equal?
+$cmp  (S S – x)   ; 0 equal, -1 less, 1 greater
+```
+
+## Variables and boxes
+
+Variables store one stack value in a Box. Fetch with `@`, store with `!`.
+
+```fift
+variable x  variable y
+{ dup x !  dup * y ! } : setxy
+3 setxy  x @ .  y @ .  x @ y @ + .
+
+variable counter
+{ counter 0! }                  : reset-counter
+{ counter @ 1+ dup counter ! } : next-counter
+```
+
+Primitives:
+
+```text
+variable    ( – )      ; scans name, defines word pushing new empty Box
+hole        ( – p)     ; new empty Box (== null box)
+box         (x – p)    ; new Box with value (== hole tuck !)
+@           (p – x)    ; fetch
+!           (x p – )   ; store
++!          (x p – )   ; add to integer in Box
+1+!         (p – )     ; increment integer in Box
+0!          (p – )     ; store 0
+```
+
+Initialized variables:
+
+```fift
+17 box constant x
+{ box constant } : init-variable
+17 init-variable x
+"test" init-variable y
+```
+
+You can `forget` names after creating API words to encapsulate state.
+
+## Tuples and arrays
+
+Tuples are immutable ordered collections. Helpers exist for pairs/triples and random access.
+
+Constructing and dumping:
+
+```fift
+| 2 , 3 , 9 , .dump     \ [ 2 3 9 ]
+2 3 9 triple .dump      \ [ 2 3 9 ]
+```
+
+Access and unpack:
+
+```text
+untuple  (t n – x1 .. xn)
+unpair   (t – x y)         ; == 2 untuple
+untriple (t – x y z)       ; == 3 untuple
+explode  (t – x..xn n)
+count    (t – n)
+tuple?   (t – ?)
+[]       (t i – x)         ; 0-based
+first/second/third         ; 0/1/2 []
+```
+
+Arrays via Tuples of Boxes:
+
+```text
+allot (n – t)   ; tuple of n empty boxes (| { hole , } rot times)
+```
+
+Example:
+
+```fift
+10 allot constant A
+| 3 box , 1 box , 4 box , 1 box , 5 box , 9 box , constant B
+{ over @ over @ swap rot ! swap ! } : swap-values-of
+{ B swap [] } : B[]
+{ B[] swap B[] swap-values-of } : swap-B
+{ B[] @ . } : .B[]
+0 1 swap-B  1 3 swap-B  0 2 swap-B
+0 .B[] 1 .B[] 2 .B[] 3 .B[]
+```
+
+## Lists
+
+Lisp‑style lists use Null as the empty list and pairs as nodes.
+
+```text
+null   ( – ⊥)
+null?  (x – ?)
+cons   (h t – l)   ; == pair
+uncons (l – h t)   ; == unpair
+car    (l – h)     ; == first
+cdr    (l – t)     ; == second
+cadr   (l – h1)    ; == cdr car
+list   (x1..xn n – l)
+.l     (l – )      ; print list
+```
+
+Example:
+
+```fift
+2 3 9 3 tuple .dump cr
+2 3 9 3 list dup .dump space dup .l cr
+"test" swap cons .l cr
+```
+
+## Atoms
+
+Atoms are unique by name and useful for labels, tags, and identifiers.
+
+```text
+(atom) (S x – a -1 | 0)  ; find/create by name if x != 0
+atom   (S – a)           ; == true (atom) drop
+‘word  ( – a)            ; Atom literal
+anon   ( – a)            ; new unique anonymous atom
+atom?  (u – ?)
+eq?    (u v – ?)         ; equal for Integer/Atom/Null
+```
+
+Example: simple S‑expression evaluator uses atoms for operators.
+
+```fift
+variable ’eval
+{ ’eval @ execute } : eval
+{ dup tuple? {
+  uncons uncons uncons
+  null? not abort"three-element list expected"
+  swap eval  swap eval  rot
+  dup ‘+ eq? { drop + } {
+   dup ‘- eq? { drop - } {
+    ‘* eq? not abort"unknown operation" *
+   } cond
+  } cond
+ } if
+} ’eval !
+
+‘+ 2 ‘* 3 4 3 list 3 list dup .l cr eval . cr
+```
+
+## Command line arguments (script mode)
+
+Fift scripts can read command‑line arguments and environment when invoked from a shell. Typical patterns:
+
+- Use `argv`/`argc` accessors (from standard library) or parse input files via `include`.
+- Combine with parsing words like `word` and numeric parsing `(number)` to read values.
+
+Example (schematic):
+
+```fift
+/* File: echo-args.fif */
+{ argc @ 1- { i argv @ type space } for } : echo-args
+echo-args cr
+```
+
+Run from shell with positional arguments to print them. See the standard library for exact names available in your build.
+
+<Feedback />

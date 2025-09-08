@@ -1,0 +1,72 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Dictionary, interpreter, and compiler
+
+This chapter explains how Fift parses, compiles, and executes words; the notion of active words; and how to define new words programmatically.
+
+## Interpreter state and blocks
+
+- Internal `state` controls behavior:
+  - `state = 0`: parsed words execute immediately.
+  - `state > 0`: parsed words are compiled (their execution tokens are appended to the current WordList).
+- `{` pushes a new empty WordList and increments `state`; `}` decrements `state` and leaves a `WordDef` for the block on the stack. Nested `{ ... }` increase `state` accordingly.
+
+## Ordinary vs active words
+
+- Ordinary words (default; e.g., `:`, `constant`) execute at `state = 0` and compile at `state > 0`.
+- Active words always run at parse time. They must leave `x1 .. xn n e` where `e` is a `WordDef`. Then:
+  - If `state = 0`, `n` is dropped and `e` is executed (as if `nip execute`).
+  - If `state > 0`, the values are compiled into the current WordList (as if `(compile)` was called). If `e == 'nop`, only values are compiled.
+
+## Literals
+
+- Unknown tokens are parsed via `(number)`. On success the interpreter behaves as if an active word returned the literal and `'nop`, executing or compiling it depending on `state`.
+
+## Defining active and prefix words
+
+- `:: name` defines an active word `name` (always executed during parsing).
+- `::_ name` defines an active prefix word (no trailing space required).
+
+Examples:
+
+```fift
+{ bl word 1 ' type } :: say      \ print next word now or compile it
+{ bl word 1 { type space } } :: say   \ print word with a trailing space
+
+{ char " word 1 'nop } ::_ "      \ string literal introducer
+{ char " word 1 ' type } ::_ ."    \ print string literal
+```
+
+## Dictionary operations and defining words
+
+- `create name (e – )`: define ordinary word `name` with body `e`.
+- `(create) (e S x – )`: define word with name `S` and flags `x` (bit +1 active, +2 prefix).
+- `: name (e – )`: ordinary word; `:_ name` — ordinary prefix word.
+- `:: name (e – )`: active word; `::_ name` — active prefix word.
+- `forget name` / `(forget) (S – )`: remove a definition.
+- `constant name (x – )`, `2constant name (x y – )`, `=: name (x – )` (works inside blocks).
+
+## Lookup helpers
+
+- `' name` pushes a `WordDef` for the current definition of `name` (compile-time capture inside blocks).
+- `@' name` looks up `name` at runtime, then executes it; useful to implement recursion without pre-binding but slower. See recursion in Chapter 3.
+
+## Word lists and composition
+
+Low-level primitives (names may vary slightly between builds):
+
+- `({)` start appending to current WordList
+- `(})` finish and return `WordDef`
+- `(compile)` append values/invocations
+- `does (x1..xn n e – e0)` build an execution token that, when run, pushes `x1..xn` then executes `e`.
+
+## Custom defining words
+
+Build defining words using `does` + `create` (conceptual examples):
+
+```fift
+{ 1 'nop does create } : constant
+{ 2 'nop does create } : 2constant
+```
+
+<Feedback />

@@ -1,0 +1,130 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Blocks, loops, and conditionals
+
+Similarly to arithmetic, control flow in Fift is stack‑based: you first push a block (an execution token) and then invoke a word that runs it conditionally or repeatedly.
+
+## Defining and executing blocks
+
+Blocks are usually defined with `{` and `}` and produce a `WordDef` on the stack. You can execute a block with `execute` or assign it to a word with `:`.
+
+```fift
+17 { 2 * } execute .          \ 34
+
+{ dup * }
+dup : square : **2            \ define two names with same body
+
+’ dup execute                  \ equivalent to dup
+’ dup : duplicate              \ define synonym
+```
+
+The word `’` pushes the current definition of a word as an execution token.
+
+## Conditional execution
+
+Execute blocks depending on a flag (non‑zero is true):
+
+```text
+if    (x e   – )   ; execute e if x != 0
+ifnot (x e   – )   ; execute e if x == 0
+cond  (x e e0 – )  ; if x != 0 then e else e0
+```
+
+Example using `cond` and nested blocks:
+
+```fift
+{ { ."true " } { ."false " } cond } : ?.
+2 3 < ?.   2 3 = ?.   2 3 > ?.
+
+{ ?dup
+  { 0< { ."negative " } { ."positive " } cond }
+  { ."zero " }
+  cond
+} : chksign
+
+-17 chksign
+```
+
+## Simple loops
+
+Run a block a fixed number of times:
+
+```text
+times (e n – )   ; execute e exactly n times (n >= 0)
+```
+
+Examples:
+
+```fift
+1 { 10 * } 70 times .         \ 10^70
+
+{ 0 1 rot { swap 1+ tuck * } swap times nip } : fact
+5 fact .                      \ 120
+
+{ 0 1 rot { tuck + } swap times nip } : fibo
+6 fibo .                      \ 13
+```
+
+## Loops with an exit condition
+
+Two primitives execute a body and check an exit flag each iteration:
+
+```text
+until (e – )        ; run e, pop flag, continue if flag == 0, else exit
+while (e e0 – )     ; run e, pop flag; if 0 exit, else run e0 and continue
+```
+
+Example: first two Fibonacci numbers greater than a bound:
+
+```fift
+{ 1 0 rot { -rot over + swap rot 2dup >= } until drop } : fib-gtr
+1000 fib-gtr . .                 \ 1597 2584
+
+1 { 10 * } 70 times dup fib-gtr */ .  \ 70 decimals of φ
+```
+
+## Recursion
+
+Blocks capture the current definitions at compile time. This means naïve recursion like
+
+```fift
+{ ?dup { dup 1- fact * } { 1 } cond } : fact   \ fails to compile
+```
+
+does not see `fact` yet. Three approaches:
+
+1) Runtime lookup (simple, slower):
+
+```fift
+{ ?dup { dup 1- @' fact * } { 1 } cond } : fact
+5 fact .   \ 120
+```
+
+2) Vector variable (fast, idiomatic):
+
+```fift
+variable 'fact
+{ 'fact @ execute } : fact
+{ ?dup { dup 1- fact * } { 1 } cond } 'fact !
+```
+
+3) Getter/setter helper (define both `fact` and `:fact`):
+
+```fift
+{ 'fact @ execute } : fact
+{ 'fact ! } : :fact
+{ ?dup { dup 1- fact * } { 1 } cond } :fact
+```
+
+Tip: after initializing, you may `forget :fact` to prevent further changes.
+
+## Throwing exceptions
+
+Use `abort"message"` to throw with a message. The interpreter reports file/line, current word, clears the stack, and omits the usual `ok`.
+
+```fift
+{ dup 0= abort"Division by zero" / } : safe/
+5 0 safe/ .
+```
+
+<Feedback />

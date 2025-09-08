@@ -1,0 +1,39 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Introduction
+
+This document provides a brief description of Fift, a stack-based general‑purpose programming language optimized for creating, debugging, and managing TON Blockchain smart contracts.
+
+Fift is designed to work closely with the TON Virtual Machine (TVM) and the TON Blockchain. In particular, it offers:
+- Native support for 257‑bit integer arithmetic
+- Shared TVM primitives for manipulating cells, slices, and builders
+- An interface to Ed25519 cryptography used by TON
+- A macro‑assembler for writing TVM code
+
+While Fift is conceptually similar to Forth, there are important differences: Fift enforces runtime type checking and keeps values of different types on its stack, not only integers.
+
+:::note
+The original “Fift: A Brief Introduction” describes an early version of the language; some minor details may have evolved since then.
+:::
+
+## Interactive parsing model (high level)
+
+Fift reads input line by line, splits it into words, and executes them as they are recognized:
+- If a word is found in the dictionary, it is executed immediately.
+- If no word matches, the next token is interpreted as an Integer literal and pushed on the stack.
+- Some words require a trailing blank (space or end-of-line); prefix words do not.
+
+For example, entering the following in interactive mode:
+
+```fift
+2 3 + .
+```
+
+pushes `2`, then `3`, computes the sum with `+`, and prints it with `.`. You will see output similar to:
+
+```text
+5 ok
+```
+
+<Feedback />
+

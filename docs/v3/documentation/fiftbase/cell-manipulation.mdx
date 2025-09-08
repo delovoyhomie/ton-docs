@@ -1,0 +1,109 @@
+import Feedback from '@site/src/components/Feedback';
+
+# Cell manipulation
+
+This chapter summarizes Fift words for working with TVM Cells, Slices, Builders, BOC serialization, and Bytes I/O.
+
+:::tip
+Background reading: Cells and TL‑B
+- Cells overview: /v3/documentation/data-formats/cells/overview
+- TL‑B language: /v3/documentation/data-formats/tlb/overview
+:::
+
+## 5.1 Slice literals
+
+- `b{...}`: binary slice literal (up to 1023 bits, no refs)
+- `x{...}`: hex slice literal; optional trailing `_` strips trailing zeros and the preceding one
+- `|_ (s s0 – s')`: append a reference (wrap `s0` into a cell and add ref)
+- `|+ (s s0 – s')`: concatenate slice data and refs
+
+Examples: `b{00011101} == x{1d}`, `b{111010} == x{EA_}`.
+
+Tip: constructor/tag checks
+
+- It’s common to check a leading tag before parsing a slice (e.g., message constructors). One approach is to read bits and compare; another is to define helper active prefix words like `?x{...}`/`?b{...}` that abort on mismatch.
+
+## 5.2 Builder primitives
+
+- `<b ( – b)`: new empty builder
+- `b> (b – c)`: finalize to cell
+- `i, (b x y – b')`, `u, (b x y – b')`: append signed/unsigned y‑bit int (big‑endian)
+- `ref, (b c – b')`: append cell ref
+- `s, (b s – b')`: append slice (bits+refs)
+- `sr, (b s – b')`: append ref to a new cell from slice (== `<b swap s, b> ref,`)
+- `$, (b S – b')`: append string bytes
+
+Caveats:
+- `i,` accepts signed values up to 257 bits; `u,` up to 256 bits; both big‑endian.
+- Builders are limited to 1023 data bits and 4 refs; operations throw on overflow.
+
+## 5.3 Slice primitives
+
+- `<s (c – s)`: cell to slice; `s> (s – )`: assert empty (no bits/refs left)
+- Read integers: `i@`, `i@+`, `i@?`, `i@?+` (signed); `u@…` (unsigned)
+- Read bytes/strings: `B@`, `B@+`, `B@?`, `B@?+`; `$@…` return String
+- Read refs: `ref@`, `ref@+`, `ref@?`, `ref@?+`
+- Query: `empty?`, `remaining`, `sbits`, `srefs`, `sbitrefs`
+- Convert: `$>s (S – s)`, `s>c (s – c)`; pretty‑print: `csr. (s – )`
+
+Example (serialize/deserialize record):
+
+```fift
+\ (version: u8, a: u16, b: i32)
+{ <b  1 8 u,   0xCAFE 16 u,   -17 32 i,  b> } : mkCell
+mkCell <s  8 u@+  16 u@+  32 i@+  s> type    \ leaves nothing, throws if data remains
+```
+
+## 5.4 Cell hash
+
+Compute the sha256‑based representation hash (cf. TVM, 3.1):
+
+- `hashB (c – B)`: 32‑byte Bytes hash of Cell `c` and all descendants
+- `hashu (c – x)`: same as unsigned 256‑bit Integer
+- `shash (s – B)`: hash of Slice `s` (converted to Cell)
+
+Example:
+
+```fift
+<b 17 u, b> dup hashB Bx.  space  dup hashu .  \ hex and integer forms
+```
+
+## 5.5 Bag‑of‑cells (BOC)
+
+- `boc+>B (c x – B)`: serialize a standard BOC with root `c`; flags `x` (bitmask):
+  - `+1` index; `+2` CRC32C; `+4` store root hash; `+8` store some intermediate hashes; `+16` cache bits
+- `boc>B (c – B)`: shorthand for `0 boc+>B`
+- `B>boc (B – c)`: parse BOC into root cell (with descendants)
+
+Example:
+
+```fift
+{ <b x{4A} s, rot 16 u, swap 32 i, b> } : mkTest
+17239 -1000000001 mkTest boc>B Bx.
+```
+
+:::note
+BOC flags are explained in the TVM specification (serialization details). For message/block layouts see:
+- Messages: /v3/documentation/data-formats/layout/messages
+- Blocks: /v3/documentation/data-formats/layout/blocks
+:::
+
+## 5.6 Bytes and binary files
+
+- Literals and print: `B{…} ( – B)`, `Bx. (B – )`
+- Files: `file>B (S – B)`, `B>file (B S – )`, `file-exists?`
+- Hash/len/compare: `Blen`, `BhashB`, `Bhashu`, `B=`, `Bcmp`
+- Pack/unpack ints: `B>i@`, `B>i@+`, `B>u@`, `B>u@+` and little‑endian variants `B>Li@…`; build: `i>B`, `u>B`, `Li>B`, `Lu>B`
+- `B|`: split first x bytes and remainder; `B+`: concat
+
+See also: /v3/documentation/tvm/overview (execution model) and /v3/documentation/tvm/instructions (opcode list) for how these cells are executed inside TVM.
+
+Example (save/load BOC):
+
+```fift
+{ <b 0x4A 8 u, b> } : mk
+mk boc>B "sample.boc" B>file
+"sample.boc" file>B B>boc <s 8 u@+ . s>   \ 74
+```
+
+<Feedback />
