@@ -72,6 +72,10 @@ module.exports = {
       position: 'left',
       items: [
         {
+          to: '/v3/documentation/fiftbase/overview',
+          label: 'Fift Base Manual',
+        },
+        {
           to: 'v3/documentation/smart-contracts/overview',
           label: 'Smart contracts',
         },
