@@ -26,3 +26,5 @@ yarn-error.log*
 .gitpod.yml
 
 .env
+\# Temporary: raw extracted text from PDF
+fiftbase.txt

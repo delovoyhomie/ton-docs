@@ -358,6 +358,22 @@
     "mytonctrl",
     "mytoncore",
     "unexist"
+  ,
+  "fiftbase",
+  "hashu",
+  "shash",
+  "Blen",
+  "Bhash",
+  "Bhashu",
+  "Bcmp",
+  "dictnew",
+  "runvmdict",
+  "runvmctx",
+  "gasrunvmcode",
+  "gasrunvmdict",
+  "gasrunvm",
+  "gasrunvmctx",
+  "smca"
   ],
   "ignoreRegExpList": [
     "\\(#.*\\)",
@@ -398,5 +414,7 @@
     "3rd/*",
     ".github/*",
     "crowdin*.yml"
+  ,
+  "fiftbase.txt"
   ]
 }
