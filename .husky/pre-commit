@@ -1,13 +1,21 @@
 #!/usr/bin/env sh
 
-STAGED=$(git diff --cached --name-only)
+# Spell-check only staged Markdown files
+STAGED_MD_COUNT=$(git diff --cached --name-only -- '*.md' '*.mdx' | wc -l | tr -d ' ')
 
-echo "Running cspell on staged files..."
-echo "$STAGED" | xargs ./node_modules/.bin/cspell --show-suggestions --no-must-find-files
+if [ "$STAGED_MD_COUNT" -eq 0 ]; then
+  echo "No Markdown files staged. Skipping cspell."
+  exit 0
+fi
+
+echo "Running cspell on staged Markdown files..."
+# Note: BSD xargs in some environments misbehaves with -0; using newline delim.
+git diff --cached --name-only -- '*.md' '*.mdx' \
+  | xargs ./node_modules/.bin/cspell --show-suggestions --no-must-find-files
 
 if [ $? -ne 0 ]; then
-    echo "❌ Commit failed: Spelling errors detected by cspell."
-    exit 1
+  echo "❌ Commit failed: Spelling errors detected by cspell."
+  exit 1
 fi
 
 echo "✅ No spelling errors found."

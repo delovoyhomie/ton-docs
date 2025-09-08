@@ -28,3 +28,4 @@ yarn-error.log*
 .env
 \# Temporary: raw extracted text from PDF
 fiftbase.txt
+git-error

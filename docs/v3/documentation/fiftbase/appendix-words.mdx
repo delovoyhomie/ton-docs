@@ -14,6 +14,200 @@ See also:
 - Chapter 6: /v3/documentation/fiftbase/ton-specific
 - Chapter 7: /v3/documentation/fiftbase/fift-assembler
 
+## A
+
+- `abort"…" ( – )`: throws an exception with a message; clears stack; see 3.6.
+- `allot (n – t)`: create a tuple of `n` empty Boxes; arrays via Tuples; see 2.15.
+- `anon ( – a)`: create new anonymous Atom; see 2.17.
+- `atom (S – a)`, `(atom) (S x – a −1 | 0)`: get/create Atom by name; see 2.17.
+- `and (x y – z)`: bitwise AND; works with boolean −1/0 convention; see 2.11.
+
+## B
+
+- `B{…} ( – B)`: Bytes literal (even number of hex digits); see 5.6.
+- `B+ (B0 B1 – B)`: concat Bytes; see 5.6.
+- `B| (B x – B0 B1)`: split first `x` bytes and remainder; see 5.6.
+- `B>file (B S – )`: write Bytes to binary file; overwrites; see 5.6.
+- `file>B (S – B)`: read binary file to Bytes; see 5.6.
+- `Bx. (B – )`: print Bytes as uppercase hex; see 5.6.
+- `Blen (B – x)`: length in bytes; see 5.6.
+- `BhashB (B – B0)`, `Bhashu (B – x)`: sha256 hash as Bytes / uint256; see 5.6.
+- `B= (B B0 – ?)`, `Bcmp (B B0 – x)`: equality and lexicographic compare; see 5.6.
+- `B>i@ (B x – y)`, `B>i@+ (B x – B' y)`: read big‑endian signed `x`‑bit int (+ remainder); see 5.6.
+- `B>u@`, `B>u@+`: unsigned variants; `B>Li@`, `B>Li@+`, `B>Lu@`, `B>Lu@+`: little‑endian variants; see 5.6.
+- `i>B (x y – B)`, `u>B (x y – B)`: pack signed/unsigned big‑endian to exact `y/8` bytes; `Li>B`, `Lu>B`: little‑endian; see 5.6.
+- `b> (b – c)`: finalize Builder to Cell; see 5.2.
+- `<b ( – b)`: new empty Builder; see 5.2.
+- `bl ( – 32)`: push codepoint of space; see 2.10.
+- `bye ( – )`: terminate interpreter with exit code 0; see 2.3.
+
+## C
+
+- `car (l – h)`, `cdr (l – t)`, `cadr (l – h1)`: list head/tail/second; see 2.16.
+- `char X ( – x)`: codepoint of first char of literal `X`; see 2.10.
+- `cond (x e e0 – )`: conditional block execution; see 3.2.
+- `cons (h t – l)`, `uncons (l – h t)`: list pair/unpair; see 2.16.
+- `constant name (x – )`, `2constant name (x y – )`: define named constants; see 2.7.
+- `count (t – n)`: tuple length; see 2.15.
+- `create name (e – )`, `(create) (e S x – )`: define words (ordinary/with flags); see 4.5.
+- `cr ( – )`: newline; see 2.10.
+- `csr. (s – )`: recursively print Slice/Cells; see 5.3.
+- `cmp (x y – z)`: comparison: 1 if `x>y`, −1 if `x<y`, 0 if equal; see 2.12.
+
+## D
+
+- `def? name ( – ?)`: check whether word `name` is defined; see 5.3 note.
+- `depth ( – n)`: current stack depth; see 4.x utilities.
+- `dictnew ( – D)`: create new empty TVM dictionary (Null); see 6.3.
+- `dictmap (D n e – D')`: map over key/value pairs with builder/value → new builder or skip; see 6.3.
+- `dictmerge (D D0 n e – D00)`: merge two dictionaries with custom combine; see 6.3.
+- `does (x1 … xn n e – e0)`: build a token that pushes values then executes `e`; see 4.7–4.8.
+- `drop (x – )`: remove top of stack; see 2.5.
+- `dup (x – x x)`: duplicate top of stack; see 2.5.
+- `: name (e – )`: define ordinary word; see 4.5.
+- `:_ name (e – )`: define ordinary prefix word; see 4.5.
+- `:: name (e – )`: define active word; see 4.4.
+- `::_ name (e – )`: define active prefix word; see 4.4.
+
+## E
+
+- `emit (x – )`: print UTF‑8 character by codepoint; see 2.10.
+- `empty? (s – ?)`: check slice is empty (no bits/refs); see 5.3.
+- `eq? (u v – ?)`: equality for Integer/Atom/Null; see 2.17.
+- `execute (e – )`: execute block/WordDef; see 3.1.
+- `explode (t – x … xn n)`: unpack tuple of unknown length; see 2.15.
+- `ed25519_sign_uint (x priv – sig)`: sign uint256 with Ed25519; see 6.1.
+
+## F
+
+- `false ( – 0)`: boolean false; see 2.11.
+- `first (t – x)`: first tuple element (`0 []`); see 2.15.
+- `file-exists? (S – ?)`: check file presence; see 5.6.
+- `forget name ( – )`: remove definition from dictionary; see 4.5.
+
+## G
+
+- `gasrunvmcode (… s z – … z0)`: run TVM code with gas limit; see 6.4.
+- `gasrunvmdict (… s z – … z0)`: gas‑aware `runvmdict`; see 6.4.
+- `gasrunvm (… s c z – … c' z0)`: gas‑aware `runvm`; see 6.4.
+- `gasrunvmctx (… s c t z – … c' z0)`: gas‑aware `runvmctx`; see 6.4.
+
+## H
+
+- `halt (x – )`: terminate interpreter with exit code `x`; see 2.3.
+- `hashB (c – B)`: cell representation hash (sha256) as Bytes; see 5.4.
+- `hashu (c – x)`: cell representation hash as uint256; see 5.4.
+- `hole ( – p)`: create empty Box; see 2.14.
+
+## I
+
+- `i, (b x y – b')`: append signed `y`‑bit int to Builder; see 5.2.
+- `i@ (s x – y)`, `i@+ (s x – y s')`, `i@? (s x – y −1|0)`, `i@?+ (s x – y s' −1|s 0)`: read signed `x`‑bit int from Slice; see 5.3.
+- `idict! (v x D n – D' −1|D 0)`, `idict!+`: insert signed key/value to TVM dict; see 6.3.
+- `idict@ (x D n – v −1|0)`, `idict@?`: lookup key in dict; see 6.3.
+- `idict-del (x D n – D' −1|D 0)`: delete key; see 6.3.
+- `include (S – )`: load and interpret Fift file; see 7.1.
+- `INT (b x – b')` / `PUSHINT`: push integer constant in assembler; see 7.3.
+- `if (x e – )`, `ifnot (x e – )`: conditional execution; see 3.2.
+
+## J
+
+–
+
+## K
+
+–
+
+## L
+
+- `Li>B (x y – B)`, `Lu>B (x y – B)`: little‑endian pack to Bytes; see 5.6.
+- `list (x1 … xn n – l)`: build list; see 2.16.
+- Length helpers: use `$len` for strings and `Blen` for Bytes; see 2.10, 5.6.
+- `' name ( – e)`: push execution token of current definition; see 4.6.
+- `@' name ( – )`: lookup `name` at runtime and execute; see 4.6.
+
+## M
+
+- `mod (x y – r)`, `/ (x y – q)`, `/mod (x y – q r)`: division/remainder; see 2.4.
+- `mul` family: `* (x y – xy)`; see 2.4.
+
+## N
+
+- `negate (x – −x)`: arithmetic negation; see 2.4.
+- `nip (x y – y)`: drop second; see 2.5.
+- `now ( – x)`: current Unix time; see 6.1.
+- `null ( – ⊥)`, `null? (x – ?)`: empty list/null value; see 2.16.
+- `newkeypair ( – priv pub)`: generate Ed25519 keypair (test entropy); see 6.1.
+
+## O
+
+- `or (x y – z)`: bitwise OR (−1/0 booleans compatible); see 2.11.
+- `over (x y – x y x)`: copy second; see 2.5.
+
+## P
+
+- `pair (x y – t)`, `unpair (t – x y)`: pair helpers; see 2.15.
+- `pfxdict! (v k s n – s' −1|s 0)`, `pfxdict@ (k s n – v −1|0)`: prefix dictionaries; see 6.3.
+- `pick (… x_n..x_0 n – … x_n..x_0 x_n)`, `roll (… – …)`: stack selection/rotation; see 2.5.
+- `priv>pub (priv – pub)`: derive Ed25519 pubkey; see 6.1.
+- `PUSHSLICE`, `PUSHCONT`: assembler ops for immediate slice/continuation; see 7.5.
+
+## Q
+
+- `quit ( – )`: return to top level of the Fift interpreter (not OS); see 2.3.
+
+## R
+
+- `ref@ (s – c)`, `ref@+ (s – s' c)`, `ref@? (s – c −1|0)`, `ref@?+ (s – s' c −1|s 0)`: read cell reference(s) from Slice; see 5.3.
+- `remaining (s – bits refs)`, `sbits (s – bits)`, `srefs (s – refs)`, `sbitrefs (s – bits refs)`: Slice introspection; see 5.3.
+- `rot (x y z – y z x)`, `-rot (x y z – z x y)`: rotate top 3; see 2.5.
+- `ref, (b c – b')`: append a cell reference to Builder; see 5.2.
+
+## S
+
+- `s, (b s – b')`: append Slice (bits+refs) to Builder; see 5.2.
+- `sr, (b s – b')`: append ref to new Cell built from Slice; see 5.2.
+- `s> (s – )`: assert Slice is empty; see 5.3.
+- `s>c (s – c)`, `$>s (S – s)`: convert Slice/Cell/String; see 5.3.
+- `sgn (x – y)`: sign function (1 if `x>0`, −1 if `x<0`, 0 if 0); see 2.12.
+- `space ( – )`: print one space; see 2.10.
+- `swap (x y – y x)`, `tuck (x y – y x y)`: stack operators; see 2.5.
+- `second (t – x)`, `third (t – x)`: tuple element accessors; see 2.15.
+
+## T
+
+- `times (e n – )`: execute block `e` exactly `n` times; see 3.3.
+- `true ( – −1)`: boolean true; see 2.11.
+- `type (S – )`: print string; see 2.10.
+
+## U
+
+- `u, (b x y – b')`: append unsigned `y`‑bit int to Builder; see 5.2.
+- `u@ (s x – y)`, `u@+ (s x – y s')`, `u@? (s x – y −1|0)`, `u@?+ (s x – y s' −1|s 0)`: read unsigned `x`‑bit int from Slice; see 5.3.
+- `unpair (t – x y)`, `untriple (t – x y z)`, `untuple (t n – x1 … xn)`: tuple unpack; see 2.15.
+- `until (e – )`: loop with exit flag; see 3.4.
+
+## V
+
+- `variable name ( – )`: create Box and define word `name` that pushes it; see 2.14.
+
+## W
+
+- `while (e e0 – )`: loop with pre‑condition; see 3.4.
+- `word (x – S)`: parse word delimited by codepoint `x`; see 2.10.
+
+## X
+
+- `x{…} ( – s)`: hex Slice literal (optional `_` trims padding); see 5.1.
+
+## Y
+
+–
+
+## Z
+
+–
+
 ## Common stack operators
 
 - `dup (x – x x)`
@@ -23,6 +217,9 @@ See also:
 - `over (x y – x y x)`; `tuck (x y – y x y)`; `nip (x y – y)`
 - `2dup (x y – x y x y)`; `2drop (x y – )`; `2swap (a b c d – c d a b)`
 - `pick (x_n..x_0 n – x_n..x_0 x_n)`; `roll (x_n..x_0 n – x_{n-1}..x_0 x_n)`
+- `-roll (… n – …)`: rotate opposite direction; see 2.5.
+- `exch (… x_n n – … x_0 … x_n)`, `exch2 (… n m – …)`: exchange positions; see 2.5.
+- `?dup (x – x x | x)`: duplicate only if non‑zero integer; see 2.5.
 
 ## Arithmetic and comparison
 
@@ -35,6 +232,11 @@ See also:
 ## Strings and I/O
 
 - `"…" ( – S)`; `."…" ( – )`; `type (S – )`; `cr ( – )`; `emit (x – )`
+- `. (x – )`: print integer with trailing space
+- `._ (x – )`: print integer without trailing space
+- `.s ( – )`: print whole stack (deepest → top)
+- `.dump (x – )`: pretty‑print top value (e.g., tuple)
+- `.l (l – )`: print list
 - `char X ( – x)`; `bl ( – 32)`; `space ( – )`
 - `$+ (S S – S)`; `$len (S – x)`; `+"…" (S – S)`
 - `word (x – S)`; `(.) (x – S)`; `(number) (S – 0 | x 1 | x y 2)`
