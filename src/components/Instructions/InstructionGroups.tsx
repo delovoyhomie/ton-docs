@@ -74,45 +74,52 @@ export const InstructionGroups = React.memo(({ instructions, aliases, search }: 
     return 'all';
   }, [filteredAliases, filteredInstructions]);
 
+  // Build children first; if none, avoid rendering Tabs at all
+  const children = sections.map(({ label, types, value }) => {
+    if (value === 'alias') {
+      if (!filteredAliases.length) return null;
+      return (
+        <TabItem label={label} value={value} key={value}>
+          <InstructionTable
+            instructions={filteredAliases.map((alias) => ({
+              opcode: alias.instruction?.doc.opcode,
+              fift: alias.doc_fift,
+              gas: alias.instruction?.doc.gas,
+              description: alias.description,
+              stack: alias.doc_stack,
+            }))}
+          />
+        </TabItem>
+      );
+    }
+
+    const tabInstructions = types
+      ? filteredInstructions.filter((inst) => types.includes(inst.doc.category))
+      : filteredInstructions;
+
+    if (!tabInstructions.length) return null;
+    return (
+      <TabItem label={label} value={value} key={value}>
+        <InstructionTable
+          instructions={tabInstructions.map((inst) => ({
+            opcode: inst.doc.opcode,
+            fift: inst.doc.fift,
+            gas: inst.doc.gas,
+            description: inst.doc.description,
+            stack: inst.doc.stack,
+          }))}
+        />
+      </TabItem>
+    );
+  }).filter(Boolean);
+
+  if (children.length === 0) {
+    return <div style={{ padding: '0.5rem 0' }}>No instructions available.</div>;
+  }
+
   return (
     <Tabs key={activeTab} defaultValue={activeTab}>
-      {sections.map(({ label, types, value }) => {
-        if (value === 'alias') {
-          if (!filteredAliases.length) return null;
-          return (
-            <TabItem label={label} value={value} key={value}>
-              <InstructionTable
-                instructions={filteredAliases.map((alias) => ({
-                  opcode: alias.instruction?.doc.opcode,
-                  fift: alias.doc_fift,
-                  gas: alias.instruction?.doc.gas,
-                  description: alias.description,
-                  stack: alias.doc_stack,
-                }))}
-              />
-            </TabItem>
-          );
-        }
-
-        const tabInstructions = types
-          ? filteredInstructions.filter((inst) => types.includes(inst.doc.category))
-          : filteredInstructions;
-
-        if (!tabInstructions.length) return null;
-        return (
-          <TabItem label={label} value={value} key={value}>
-            <InstructionTable
-              instructions={tabInstructions.map((inst) => ({
-                opcode: inst.doc.opcode,
-                fift: inst.doc.fift,
-                gas: inst.doc.gas,
-                description: inst.doc.description,
-                stack: inst.doc.stack,
-              }))}
-            />
-          </TabItem>
-        );
-      })}
+      {children}
     </Tabs>
   );
 });

@@ -30,56 +30,55 @@ To store connection data with user wallets, a storage interface must be implemen
 <details>
   <summary><b>Example implementation</b></summary>
 
-```python
-import json
-import os
-from asyncio import Lock
-from typing import Dict, Optional
+  ```python
+  import json
+  import os
+  from asyncio import Lock
+  from typing import Dict, Optional
 
-import aiofiles
+  import aiofiles
 
-from tonutils.tonconnect import IStorage
+  from tonutils.tonconnect import IStorage
 
 
-class FileStorage(IStorage):
+  class FileStorage(IStorage):
 
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-        self.lock = Lock()
+      def __init__(self, file_path: str):
+          self.file_path = file_path
+          self.lock = Lock()
 
-        if not os.path.exists(self.file_path):
-            with open(self.file_path, "w") as f:
-                json.dump({}, f)  # type: ignore
+          if not os.path.exists(self.file_path):
+              with open(self.file_path, "w") as f:
+                  json.dump({}, f)  # type: ignore
 
-    async def _read_data(self) -> Dict[str, str]:
-        async with self.lock:
-            async with aiofiles.open(self.file_path, "r") as f:
-                content = await f.read()
-                if content:
-                    return json.loads(content)
-                return {}
+      async def _read_data(self) -> Dict[str, str]:
+          async with self.lock:
+              async with aiofiles.open(self.file_path, "r") as f:
+                  content = await f.read()
+                  if content:
+                      return json.loads(content)
+                  return {}
 
-    async def _write_data(self, data: Dict[str, str]) -> None:
-        async with self.lock:
-            async with aiofiles.open(self.file_path, "w") as f:
-                await f.write(json.dumps(data, indent=4))
+      async def _write_data(self, data: Dict[str, str]) -> None:
+          async with self.lock:
+              async with aiofiles.open(self.file_path, "w") as f:
+                  await f.write(json.dumps(data, indent=4))
 
-    async def set_item(self, key: str, value: str) -> None:
-        data = await self._read_data()
-        data[key] = value
-        await self._write_data(data)
+      async def set_item(self, key: str, value: str) -> None:
+          data = await self._read_data()
+          data[key] = value
+          await self._write_data(data)
 
-    async def get_item(self, key: str, default_value: Optional[str] = None) -> Optional[str]:
-        data = await self._read_data()
-        return data.get(key, default_value)
+      async def get_item(self, key: str, default_value: Optional[str] = None) -> Optional[str]:
+          data = await self._read_data()
+          return data.get(key, default_value)
 
-    async def remove_item(self, key: str) -> None:
-        data = await self._read_data()
-        if key in data:
-            del data[key]
-            await self._write_data(data)
-```
-
+      async def remove_item(self, key: str) -> None:
+          data = await self._read_data()
+          if key in data:
+              del data[key]
+              await self._write_data(data)
+  ```
 </details>
 
 ### Initializing TON Connect
@@ -475,16 +474,16 @@ TON Connect emits two categories of events:
 
 These events are triggered when an action completes successfully:
 
-* `Event.CONNECT` — emitted when a wallet is successfully connected.
+- `Event.CONNECT` — emitted when a wallet is successfully connected.
   **Parameters:** `user_id: int`, `wallet: WalletInfo`
 
-* `Event.DISCONNECT` — emitted when a wallet is disconnected.
+- `Event.DISCONNECT` — emitted when a wallet is disconnected.
   **Parameters:** `user_id: int`, `wallet: WalletInfo`
 
-* `Event.TRANSACTION` — emitted when a transaction is confirmed by the user.
+- `Event.TRANSACTION` — emitted when a transaction is confirmed by the user.
   **Parameters:** `user_id: int`, `transaction: SendTransactionResponse`, `rpc_request_id: int`
 
-* `Event.SIGN_DATA` — emitted when a sign data request is approved.
+- `Event.SIGN_DATA` — emitted when a sign data request is approved.
   **Parameters:** `user_id: int`, `sign_data: SignDataResponse`, `rpc_request_id: int`
 
 #### Error Events
@@ -582,7 +581,7 @@ When working with TON Connect, errors may occur both during wallet connection an
 These errors can occur during the wallet connection initialization process:
 
 | Code | Error                     | Description                                                               |
-|------|---------------------------|---------------------------------------------------------------------------|
+| ---- | ------------------------- | ------------------------------------------------------------------------- |
 | 0    | `UnknownError`            | An unknown error occurred in the wallet during request processing.        |
 | 1    | `BadRequestError`         | The request is malformed or contains invalid parameters.                  |
 | 2    | `ManifestNotFoundError`   | The specified `manifest_url` is unreachable or does not exist.            |
@@ -597,7 +596,7 @@ These errors can occur during the wallet connection initialization process:
 These errors may occur when processing requests.
 
 | Code | Error                     | Description                                                             |
-|------|---------------------------|-------------------------------------------------------------------------|
+| ---- | ------------------------- | ----------------------------------------------------------------------- |
 | 0    | `UnknownError`            | An unknown error occurred in the wallet during request processing.      |
 | 1    | `BadRequestError`         | The request is malformed or contains invalid parameters.                |
 | 100  | `UnknownAppError`         | Application logic error while preparing the request data.               |

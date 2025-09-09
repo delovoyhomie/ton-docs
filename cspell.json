@@ -414,7 +414,9 @@
     "._",
     ".dump",
     ".l",
-    "ifnot"
+    "ifnot",
+    "skipspc",
+    "Zoomable"
   ],
   "ignoreRegExpList": [
     "\\(#.*\\)",

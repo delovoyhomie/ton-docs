@@ -54,6 +54,47 @@ mod    (x y – r := x mod y)
 
 All operations validate types and 257‑bit bounds.
 
+### Advanced integer arithmetic and shifts
+
+Division variants with rounding and combined multiply/divide helpers:
+
+```text
+/c     (x y – q := ceil(x/y))
+/r     (x y – q := round(x/y))
+/cmod  (x y – q r)  ; q as /c, remainder r := x − q*y
+/rmod  (x y – q r)  ; q as /r, remainder r := x − q*y
+*/     (x y z – q := floor((x*y)/z))           ; 513‑bit intermediate
+*/c    (x y z – q := ceil((x*y)/z))
+*/r    (x y z – q := round((x*y)/z))
+*/mod  (x y z – q r)
+*mod   (x y z – r)   ; only remainder of */mod
+```
+
+Bit shifts (power‑of‑two scaling):
+
+```text
+<<     (x y – x*2^y)
+*>>    (x y z – floor((x*y)/2^z))    ; == 1<< */
+*>>c   (x y z – ceil((x*y)/2^z))     ; == 1<< */c
+*>>r   (x y z – round((x*y)/2^z))    ; == 1<< */r
+%1<<   (x y – x mod 2^y)             ; mask low y bits (0 ≤ y ≤ 256)
+```
+
+Bitwise logic and helpers (booleans use −1/0 convention):
+
+```text
+and  or  xor  not   (x y – z) / (x – y)
+min  max  minmax    (x y – m) / (x y – m M)
+```
+
+Examples:
+
+```fift
+239 17 */r .           \ round((239)/17)
+3 2 << .               \ 12
+257 8 %1<< .           \ mask to low 8 bits
+```
+
 ## Stack manipulation words
 
 Rearrange values near the top of the stack without changing deeper entries. These words are type‑agnostic.
